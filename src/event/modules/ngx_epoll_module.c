@@ -779,6 +779,25 @@ ngx_epoll_notify(ngx_event_handler_pt handler)
 
 #endif
 
+__attribute__((noinline)) static unsigned int addr_to_id(ngx_str_t addr){
+  unsigned int ret = 0;
+  size_t i;
+
+  if(addr.len == 0)
+    return 0;
+
+  // assume: addr == "AAA.BBB.CCC.DDD"
+  for(i=0; i<addr.len; i++){
+    if(addr.data[i] == '.')
+      continue;
+    else{
+      ret += (addr.data[i] - '0');
+      ret *= 10;
+    }
+  }
+
+  return ret;
+}
 
 static ngx_int_t
 ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
@@ -838,6 +857,13 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
 
         instance = (uintptr_t) c & 1;
         c = (ngx_connection_t *) ((uintptr_t) c & (uintptr_t) ~1);
+
+	register unsigned long long id asm ("r13") = addr_to_id(c->addr_text);
+	asm volatile(
+		     ""
+		     :  // output
+		     : "a" (id)  // input
+		     );
 
         rev = c->read;
 

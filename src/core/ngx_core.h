@@ -11,6 +11,7 @@
 
 #include <ngx_config.h>
 
+register int *foo asm("r13"); // prevent r13 from being used
 
 typedef struct ngx_module_s          ngx_module_t;
 typedef struct ngx_conf_s            ngx_conf_t;
